@@ -71,9 +71,18 @@ Env: `ATLAS_MODEL` (default `sonnet`), `ATLAS_CLAUDE` (default `claude`).
 Optional zero-dep node http, **127.0.0.1 only**. The atlas works without it; when running it
 unlocks the live LLM features + Obsidian sync. `node tools/server.js` → `http://127.0.0.1:4173`
 (serves the site same-origin). Endpoints: `/api/ping`, `/api/llm` (claude -p proxy),
-`/api/vault` (write `.md` under `ATLAS_VAULT`), `/api/store?name=` (read/write `store/<name>.json`).
-Path-traversal guarded. `ATLAS_FAKE_LLM=1` returns canned replies for tests (no spend).
-Env: `ATLAS_PORT 4173`, `ATLAS_MODEL claude-sonnet-4-6`, `ATLAS_VAULT <repo>/../Knowledge-Atlas-Notes`.
+`/api/vault` (write `.md` under `ATLAS_VAULT`), `/api/store?name=` (read/write `store/<name>.json`),
+`/api/memory?q=&k=` (read-only second-brain recall, see below). Path-traversal guarded.
+`ATLAS_FAKE_LLM=1` returns canned replies for tests (no spend).
+Env: `ATLAS_PORT 4173`, `ATLAS_MODEL claude-sonnet-4-6`, `ATLAS_VAULT <repo>/../Knowledge-Atlas-Notes`,
+`ATLAS_MEMORY_DB ~/.claude/memory/memory.db`, `ATLAS_MEMORY_VAULT ~/Desktop/SecondBrain/08_ClaudeMemory`.
+
+**`/api/memory`** (`tools/memory.js`, zero-dep) - lexical recall over the user's personal
+"second brain". Source resolution, most robust first: `node:sqlite` over the FTS5 index →
+`sqlite3` CLI over the same index → grep the distilled-markdown vault. Builds an FTS5
+`OR`-of-tokens query from `q` (stopwords stripped), returns `{ hits: [{ title, excerpt, source }] }`
+ranked by FTS5 `rank`, capped at `k` (default 6, max 20). Degrades to `{ hits: [] }` when no
+store is found, the query is empty/nonsense, or any layer errors - so the app never breaks.
 
 ## Intelligence layer (`intelligence.js` + `intelligence.css`)
 
@@ -84,6 +93,15 @@ Env: `ATLAS_PORT 4173`, `ATLAS_MODEL claude-sonnet-4-6`, `ATLAS_VAULT <repo>/../
 - **#3 Gap map** - frontier + note-contradiction analysis over engaged topics (notes + `KA_PROGRESS_V1` status pills).
 - **#4 Synthesis** - cross-domain essay over 2-4 picked topics. **#5 Teach-back** - grade an explanation vs the reference.
 - **#6 Gaps inbox** - reads `store/gaps.json` (from the SessionEnd hook); resolve → `state:"closed"`. Badge: `AI (n)`.
+
+**Memory grounding**: before each LLM call, features #1-#5 fetch relevant snippets from the user's
+second brain via `/api/memory` (query built from the current topic/notes/question/explanation context)
+and prepend them to the prompt as a delimited "RELEVANT MEMORY FROM YOUR SECOND BRAIN" block, instructing
+the model to use only what is pertinent. This surfaces things the user already learned/noted about the 13
+domains - prior concepts, open questions, gaps. When `/api/memory` returns nothing (server off, no store,
+or no lexical overlap with the atlas topics), the block is empty and each feature behaves exactly as before.
+#6 makes no LLM call, so it is not grounded. `recallMemory()`/`memoryBlock()` in `intelligence.js` are
+best-effort and never throw; `window.ATLAS` is never mutated.
 
 **Live Obsidian sync**: on every `ka:changed` event (debounced), mirrors notes+answers+status per topic to
 `ATLAS_VAULT/topics/<topicId>.md` with frontmatter and `[[wikilinks]]`. Needs the server.

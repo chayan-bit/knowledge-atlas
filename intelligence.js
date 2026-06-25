@@ -87,6 +87,36 @@
     if (!r.ok) throw new Error(j.error || "llm error");
     return j.text;
   }
+  // Personal "second brain" recall: pull memory snippets relevant to the
+  // current study context so the LLM answers are grounded in what the user
+  // has already learned/noted. Best-effort: returns [] when the server is
+  // off or the store has no matching memory, so features behave as before.
+  async function recallMemory(query) {
+    if (!SERVER || !query || !query.trim()) return [];
+    try {
+      const r = await fetch("/api/memory?q=" + encodeURIComponent(query) + "&k=6");
+      if (!r.ok) return [];
+      const j = await r.json();
+      return Array.isArray(j.hits) ? j.hits : [];
+    } catch {
+      return [];
+    }
+  }
+  // Format recalled snippets as a clearly-delimited prompt context block.
+  // Returns "" when there is nothing relevant, leaving prompts untouched.
+  function memoryBlock(hits) {
+    if (!hits || !hits.length) return "";
+    const items = hits
+      .map((h) => `- ${h.title ? h.title + ": " : ""}${h.excerpt || ""}`)
+      .join("\n");
+    return (
+      "RELEVANT MEMORY FROM YOUR SECOND BRAIN (things you have previously " +
+      "learned or noted; use only what is pertinent, ignore the rest):\n" +
+      items +
+      "\n---\n"
+    );
+  }
+
   async function storeGet(name) {
     if (!SERVER) return null;
     try {
@@ -334,7 +364,9 @@
       "When the student answers, in <=1 line note what was right or missing, then ask a sharper follow-up that targets their weakest point. " +
       "If they have clearly mastered it, say so and stop. Output plain prose, no markdown headers.";
     const history = exam.log.map((m) => `${m.role === "q" ? "EXAMINER" : "STUDENT"}: ${m.text}`).join("\n");
+    const mem = memoryBlock(await recallMemory(`${t.title} ${t.domainTitle} ${t.blurb}`));
     const prompt =
+      mem +
       `Topic: ${t.title} (${t.domainTitle})\nReference summary: ${t.blurb}\n\n` +
       (history ? `Conversation so far:\n${history}\n\nContinue.` : "Ask your first question.");
     try {
@@ -365,8 +397,9 @@
         "Compare the student's explanation against the reference. Reply in plain prose with: a model score out of 100 on the first line; " +
         "then the specific misconceptions and missing pieces as short bullets; then a 2-line corrected summary. Be precise and terse.";
       try {
+        const mem = memoryBlock(await recallMemory(`${t.title} ${t.blurb} ${text}`));
         out.innerHTML = para(
-          await llm(`Reference (${t.title}): ${t.blurb}\n\nStudent explanation:\n${text}`, sys)
+          await llm(mem + `Reference (${t.title}): ${t.blurb}\n\nStudent explanation:\n${text}`, sys)
         );
       } catch (e) {
         out.innerHTML = `<div class="ix-err">${esc(e.message)}</div>`;
@@ -391,7 +424,8 @@
         "Name each topic explicitly, draw the shared deep structure, and avoid filler. Plain prose.";
       const body = chosen.map((t) => `- ${t.title} (${t.domainTitle}): ${t.blurb}`).join("\n");
       try {
-        out.innerHTML = para(await llm("Topics:\n" + body, sys));
+        const mem = memoryBlock(await recallMemory(chosen.map((t) => t.title).join(" ")));
+        out.innerHTML = para(await llm(mem + "Topics:\n" + body, sys));
       } catch (e) {
         out.innerHTML = `<div class="ix-err">${esc(e.message)}</div>`;
       }
@@ -435,8 +469,11 @@
         "frontier = up to 8 highest-ROI topics to learn next (unmastered, adjacent to mastered/engaged ones). " +
         "contradictions = real conflicts inside the learner's own notes, else empty.";
       try {
+        const engagedTitles = engaged.map((id) => titleById.get(id) || id).join(" ");
+        const mem = memoryBlock(await recallMemory(`${engagedTitles} ${notes}`));
         const j = extractJSON(await llm(
-          `Engaged/mastered: ${engaged.join(", ")}\n\nGraph (id[status] -> links):\n${adj}\n\nLearner notes:\n${notes || "(none)"}`,
+          mem +
+            `Engaged/mastered: ${engaged.join(", ")}\n\nGraph (id[status] -> links):\n${adj}\n\nLearner notes:\n${notes || "(none)"}`,
           sys
         ));
         out.innerHTML = renderGapResult(j);
@@ -520,7 +557,8 @@
       'Output ONLY a JSON array: [{"from":"topicId","to":"topicId","note":"<=110 chars, the shared idea"}]. ' +
       "Use only the given topic ids. from and to must be in different domains. Max 8. No generic links.";
     try {
-      const arr = extractJSON(await llm("Topics (id | domain > title: blurb):\n" + list, sys)) || [];
+      const mem = memoryBlock(await recallMemory(sample.map((t) => t.title).join(" ")));
+      const arr = extractJSON(await llm(mem + "Topics (id | domain > title: blurb):\n" + list, sys)) || [];
       const ids = new Set(topics.map((t) => t.id));
       const sug = jget(SUG_KEY, []);
       const known = new Set(

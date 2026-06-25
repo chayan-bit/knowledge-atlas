@@ -9,11 +9,13 @@
      ATLAS_PORT=5000 node tools/server.js
 
    Env:
-     ATLAS_PORT     port              (default 4173)
-     ATLAS_MODEL    default model     (default claude-sonnet-4-6)
-     ATLAS_CLAUDE   claude binary     (default claude)
-     ATLAS_VAULT    Obsidian sync dir (default <repo>/../Knowledge-Atlas-Notes)
-     ATLAS_FAKE_LLM 1 → canned LLM replies (for tests, no spend)
+     ATLAS_PORT        port               (default 4173)
+     ATLAS_MODEL       default model      (default claude-sonnet-4-6)
+     ATLAS_CLAUDE      claude binary      (default claude)
+     ATLAS_VAULT       Obsidian sync dir  (default <repo>/../Knowledge-Atlas-Notes)
+     ATLAS_FAKE_LLM    1 → canned LLM replies (for tests, no spend)
+     ATLAS_MEMORY_DB   second-brain FTS5  (default ~/.claude/memory/memory.db)
+     ATLAS_MEMORY_VAULT distilled .md dir (default ~/Desktop/SecondBrain/08_ClaudeMemory)
 
    Endpoints (all JSON unless noted):
      GET  /                      → static site (same-origin, no CORS)
@@ -22,6 +24,7 @@
      POST /api/vault             { relPath, content }        → { ok }
      GET  /api/store?name=gaps   → parsed store/<name>.json (or [])
      POST /api/store?name=gaps   <json body>                 → { ok }
+     GET  /api/memory?q=&k=      → { hits: [{ title, excerpt, source }] }
    ============================================================ */
 
 "use strict";
@@ -30,6 +33,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
+const memory = require("./memory");
 
 const ROOT = path.resolve(__dirname, "..");
 const STORE = path.join(ROOT, "store");
@@ -38,6 +42,16 @@ const MODEL = process.env.ATLAS_MODEL || "claude-sonnet-4-6";
 const CLAUDE = process.env.ATLAS_CLAUDE || "claude";
 const VAULT = path.resolve(
   process.env.ATLAS_VAULT || path.join(ROOT, "..", "Knowledge-Atlas-Notes")
+);
+const HOME = process.env.HOME || process.env.USERPROFILE || "";
+// Personal "second brain" memory: an FTS5 SQLite index (preferred, lexical
+// recall) with a distilled-markdown vault as the fallback. Both configurable.
+const MEMORY_DB = path.resolve(
+  process.env.ATLAS_MEMORY_DB || path.join(HOME, ".claude", "memory", "memory.db")
+);
+const MEMORY_VAULT = path.resolve(
+  process.env.ATLAS_MEMORY_VAULT ||
+    path.join(HOME, "Desktop", "SecondBrain", "08_ClaudeMemory")
 );
 
 fs.mkdirSync(STORE, { recursive: true });
@@ -162,6 +176,19 @@ async function handleApi(req, res, pathname, query) {
       } catch (e) {
         return sendJSON(res, 500, { error: e.message });
       }
+    }
+  }
+
+  if (pathname === "/api/memory" && req.method === "GET") {
+    const q = String(query.get("q") || "").slice(0, 2000);
+    const k = query.get("k");
+    if (!q.trim()) return sendJSON(res, 200, { hits: [] });
+    try {
+      const hits = memory.recall(q, k, { dbPath: MEMORY_DB, vaultDir: MEMORY_VAULT });
+      return sendJSON(res, 200, { hits });
+    } catch {
+      // never let a recall failure break the study features
+      return sendJSON(res, 200, { hits: [] });
     }
   }
 
