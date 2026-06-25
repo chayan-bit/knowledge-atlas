@@ -1,0 +1,75 @@
+[
+  {
+    "id": "g_jdskjz3u",
+    "createdAt": "2026-06-25T09:34:28.830Z",
+    "project": "chrome-websocket-spy-extension",
+    "sessionCwd": "/Users/chayanaggarwal",
+    "title": "MV3 DevTools panel message routing",
+    "domain": "web-extensions",
+    "topicId": "",
+    "gap": "Exact MV3 architecture for routing page-context data to DevTools panel via postMessage chain",
+    "note": "Pattern: MAIN world script → window.postMessage → content bridge → background SW port → panel",
+    "state": "open"
+  },
+  {
+    "id": "g_l6sje7at",
+    "createdAt": "2026-06-25T09:34:28.830Z",
+    "project": "chrome-websocket-spy-extension",
+    "sessionCwd": "/Users/chayanaggarwal",
+    "title": "chrome.debugger vs monkey-patch tradeoffs",
+    "domain": "web-extensions",
+    "topicId": "",
+    "gap": "When to prefer chrome.debugger API over WebSocket monkey-patching for interception",
+    "note": "Debugger: catches pre-load connections, shows yellow bar. Monkey-patch: clean UX, misses pre-inject connections",
+    "state": "open"
+  },
+  {
+    "id": "g_45ndinnj",
+    "createdAt": "2026-06-25T09:53:22.081Z",
+    "project": "chrome-websocket-spy-extension",
+    "sessionCwd": "/Users/chayanaggarwal",
+    "title": "MV3 DevTools panel message routing",
+    "domain": "web-extensions",
+    "topicId": "",
+    "gap": "Exact MV3 path to route page-context WebSocket events to a DevTools panel (postMessage chain)",
+    "note": "MAIN world script → window.postMessage → isolated content bridge → background SW port → panel",
+    "state": "open"
+  },
+  {
+    "id": "g_vio2dpyh",
+    "createdAt": "2026-06-25T09:53:22.081Z",
+    "project": "chrome-websocket-spy-extension",
+    "sessionCwd": "/Users/chayanaggarwal",
+    "title": "chrome.debugger vs monkey-patch tradeoffs",
+    "domain": "web-extensions",
+    "topicId": "",
+    "gap": "When chrome.debugger API is preferable over WebSocket monkey-patching for tab inspection",
+    "note": "Debugger catches pre-load connections but shows yellow warning bar; monkey-patch is clean but misses early connections",
+    "state": "open"
+  },
+  {
+    "id": "g_jq95cux4",
+    "createdAt": "2026-06-25T10:09:56.960Z",
+    "project": "chrome-websocket-spy-extension",
+    "sessionCwd": "/Users/chayanaggarwal",
+    "title": "MV3 DevTools panel message routing chain",
+    "domain": "",
+    "topicId": "",
+    "gap": "Exact postMessage chain to route MAIN-world page context data to a DevTools panel in MV3",
+    "note": "MAIN world monkey-patch → window.postMessage → isolated content bridge → background SW port → panel",
+    "state": "open"
+  },
+  {
+    "id": "g_fey2cv04",
+    "createdAt": "2026-06-25T10:09:56.960Z",
+    "project": "chrome-websocket-spy-extension",
+    "sessionCwd": "/Users/chayanaggarwal",
+    "title": "chrome.debugger vs monkey-patch for WS interception",
+    "domain": "",
+    "topicId": "",
+    "gap": "Trade-offs between chrome.debugger API and WebSocket monkey-patching for a spy extension",
+    "note": "Debugger catches pre-load WS but shows yellow banner; monkey-patch is clean UX but misses early connections",
+    "state": "open"
+  }
+]
+

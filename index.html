@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Atlas — a connected map of deep technical mastery</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="annotations.css" />
+  <link rel="stylesheet" href="intelligence.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/">
+      <span class="brand-mark">◆</span>
+      <span class="brand-text">Knowledge<span class="brand-accent">Atlas</span></span>
+    </a>
+    <div class="search-wrap">
+      <input id="search" type="search" placeholder="Search topics, tools, resources…  ( / )" autocomplete="off" />
+      <div id="search-results" class="search-results" hidden></div>
+    </div>
+    <nav class="topnav">
+      <a href="#/">Map</a>
+      <a href="#/domains">Domains</a>
+      <a href="#/connections">Connections</a>
+    </nav>
+  </header>
+
+  <main id="app"><!-- rendered by app.js --></main>
+
+  <footer class="footer">
+    <span>Knowledge Atlas — built from your <code>01_Inbox</code> roadmaps. 13 domains, fully cross-linked.</span>
+    <span class="footer-hint">Tip: every <em>connection chip</em> jumps to the related idea in another domain.</span>
+  </footer>
+
+  <!-- Knowledge graph data: one file per domain, each pushes to window.ATLAS -->
+  <script src="data/_init.js"></script>
+  <script src="data/01_dsa.js"></script>
+  <script src="data/02_os.js"></script>
+  <script src="data/03_compilers.js"></script>
+  <script src="data/04_lowlevel.js"></script>
+  <script src="data/05_cybersecurity.js"></script>
+  <script src="data/06_webdev.js"></script>
+  <script src="data/07_gamedev.js"></script>
+  <script src="data/08_aiml.js"></script>
+  <script src="data/09_embedded.js"></script>
+  <script src="data/10_cryptography.js"></script>
+  <script src="data/11_quant.js"></script>
+  <script src="data/12_web3.js"></script>
+  <script src="data/12_web3_1_fundamentals.js"></script>
+  <script src="data/12_web3_2_evm.js"></script>
+  <script src="data/12_web3_3_solidity.js"></script>
+  <script src="data/12_web3_4_defi.js"></script>
+  <script src="data/12_web3_5_tooling.js"></script>
+  <script src="data/12_web3_6_security.js"></script>
+  <script src="data/12_web3_7_mev.js"></script>
+  <script src="data/12_web3_8_l2.js"></script>
+  <script src="data/12_web3_9_zk.js"></script>
+  <script src="data/13_gpu.js"></script>
+
+  <!-- App engine -->
+  <script src="app.js"></script>
+  <!-- Annotation layer (comments / questions / your own links) -->
+  <script src="annotations.js"></script>
+  <!-- Intelligence layer (5 LLM features + Obsidian sync; needs tools/server.js) -->
+  <script src="intelligence.js"></script>
+</body>
+</html>

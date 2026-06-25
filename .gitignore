@@ -1,0 +1,6 @@
+.DS_Store
+node_modules/
+*.log
+# server-written runtime state (app source of truth is localStorage)
+store/suggestions.json
+store/user_connections.json

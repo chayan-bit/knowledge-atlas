@@ -1,0 +1,129 @@
+/* ============================================================
+   Knowledge Atlas — intelligence layer styles
+   ============================================================ */
+
+.ix-panel[hidden] { display: none !important; }
+
+.ix-nav { cursor: pointer; font-weight: 600; color: #a06bff !important; }
+
+/* per-topic status pill (appended to topic <h2>) */
+.ix-status {
+  font: inherit; font-size: 0.6rem; vertical-align: middle; margin-left: 0.5rem;
+  padding: 2px 8px; border-radius: 999px; cursor: pointer;
+  border: 1px solid #2c4055; background: #0e1626; color: #8aa0b6;
+}
+.ix-status.ix-st-learning { color: #d9b14e; border-color: #4a3c1c; background: #1a1608; }
+.ix-status.ix-st-mastered { color: #4fbf86; border-color: #1d3b2c; background: #0c1a14; }
+
+/* user-connection chips reuse .conn; tint them violet */
+.ix-userconn .arrow { color: #a06bff; }
+.ix-userconn em { color: #a06bff; font-style: normal; }
+
+/* ---- panel ---------------------------------------------------- */
+.ix-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(480px, 96vw); z-index: 1250;
+  display: flex; flex-direction: column;
+  background: #0a0f1a; border-left: 1px solid #1c2940;
+  box-shadow: -16px 0 48px rgba(0, 0, 0, 0.5);
+}
+.ix-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 18px; border-bottom: 1px solid #18222f;
+}
+.ix-head strong { flex: 1; }
+.ix-server { font-size: 0.66rem; }
+.ix-server.on { color: #4fbf86; }
+.ix-server.off { color: #6d7c8e; }
+.ix-close { background: transparent; border: 0; color: #8aa0b6; font-size: 1rem; cursor: pointer; }
+
+.ix-tabs { display: flex; flex-wrap: wrap; gap: 5px; padding: 10px 14px; border-bottom: 1px solid #131c28; }
+.ix-tabs button {
+  font: inherit; font-size: 0.72rem; color: #8aa0b6;
+  background: #0e1626; border: 1px solid #1d2a3b; padding: 5px 9px;
+  border-radius: 8px; cursor: pointer;
+}
+.ix-tabs button.on { color: #e6edf3; border-color: #3a5170; background: #142036; }
+
+.ix-offline {
+  margin: 10px 14px 0; padding: 9px 11px; font-size: 0.74rem; line-height: 1.5;
+  color: #c79a55; background: #18130a; border: 1px solid #3a2c12; border-radius: 9px;
+}
+.ix-offline code { background: #0c0a05; padding: 1px 5px; border-radius: 5px; }
+
+.ix-body { padding: 14px; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.ix-field { display: grid; gap: 5px; font-size: 0.78rem; color: #8aa0b6; }
+.ix-note, .ix-sub { font-size: 0.76rem; color: #8aa0b6; }
+.ix-sub { text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.64rem; margin-top: 4px; }
+.ix-panel select, .ix-panel textarea {
+  font: inherit; color: #e6edf3; background: #0e1626;
+  border: 1px solid #233347; border-radius: 9px; padding: 8px 10px; resize: vertical; width: 100%;
+}
+.ix-panel select:focus, .ix-panel textarea:focus { outline: none; border-color: #3f5878; }
+.ix-go {
+  font: inherit; font-size: 0.82rem; color: #08111f; background: #a06bff; font-weight: 600;
+  border: 0; padding: 8px 14px; border-radius: 9px; cursor: pointer; align-self: flex-start;
+}
+.ix-go:hover { filter: brightness(1.08); }
+
+.ix-busy { display: flex; align-items: center; gap: 9px; color: #8aa0b6; font-size: 0.84rem; padding: 6px 0; }
+.ix-spin {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid #2c4055; border-top-color: #a06bff; animation: ix-rot 0.7s linear infinite;
+}
+@keyframes ix-rot { to { transform: rotate(360deg); } }
+.ix-err { color: #e08a8a; font-size: 0.82rem; }
+.ix-result, .ix-msg { font-size: 0.86rem; color: #d6e0ea; line-height: 1.6; }
+.ix-result p { margin: 0 0 0.7em; }
+
+/* examiner thread */
+.ix-exam-thread { display: flex; flex-direction: column; gap: 10px; }
+.ix-msg { padding: 10px 12px; border-radius: 11px; }
+.ix-msg span { display: block; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+.ix-msg.ix-q { background: #0c121f; border: 1px solid #1d2a3b; }
+.ix-msg.ix-q span { color: #a06bff; }
+.ix-msg.ix-a { background: #0c1a14; border: 1px solid #1d3b2c; }
+.ix-msg.ix-a span { color: #4fbf86; }
+.ix-answerbox { display: flex; flex-direction: column; gap: 8px; }
+
+/* gap map */
+.ix-frontiers { display: flex; flex-direction: column; gap: 7px; }
+.ix-frontier {
+  display: block; padding: 9px 11px; border-radius: 9px; text-decoration: none;
+  background: #0c121f; border: 1px solid #18222f; color: #d6e0ea;
+}
+.ix-frontier:hover { border-color: #34496a; }
+.ix-frontier b { color: #6ea8ff; }
+.ix-frontier span { display: block; font-size: 0.78rem; color: #8aa0b6; margin-top: 2px; }
+.ix-contras { margin: 6px 0 0; padding-left: 18px; font-size: 0.82rem; color: #d6c08a; }
+
+/* discover suggestions */
+.ix-sug { display: flex; flex-direction: column; gap: 9px; }
+.ix-sugcard { padding: 11px 12px; border-radius: 11px; background: #0c121f; border: 1px solid #221a36; }
+.ix-sug-link { font-size: 0.84rem; color: #cdbcf5; }
+.ix-sug-link .arrow { color: #a06bff; }
+.ix-sugcard p { margin: 7px 0; font-size: 0.82rem; color: #c4d0dd; }
+.ix-sug-actions { display: flex; gap: 8px; }
+.ix-accept, .ix-reject {
+  font: inherit; font-size: 0.74rem; border-radius: 8px; padding: 4px 12px; cursor: pointer; border: 1px solid;
+}
+.ix-accept { color: #08111f; background: #7fd0a6; border-color: #7fd0a6; font-weight: 600; }
+.ix-reject { color: #aab8c8; background: transparent; border-color: #2c4055; }
+.ix-empty-sm { font-size: 0.78rem; color: #6d7c8e; padding: 4px 0; }
+
+/* gaps inbox */
+.ix-gaps { display: flex; flex-direction: column; gap: 9px; }
+.ix-gapcard { padding: 11px 12px; border-radius: 11px; background: #0c121f; border: 1px solid #2a1f2f; }
+.ix-gap-top { display: flex; align-items: center; gap: 8px; }
+.ix-gap-top b { flex: 1; font-size: 0.86rem; color: #e6edf3; }
+.ix-gap-tag {
+  font-size: 0.64rem; color: #c79a55; text-decoration: none;
+  border: 1px solid #3a2c12; background: #18130a; padding: 2px 7px; border-radius: 999px;
+}
+.ix-gapcard p { margin: 7px 0 0; font-size: 0.82rem; color: #c4d0dd; }
+.ix-gap-note { color: #7fd0a6 !important; }
+.ix-gap-done {
+  margin-top: 9px; font: inherit; font-size: 0.72rem; color: #aab8c8;
+  background: transparent; border: 1px solid #2c4055; border-radius: 8px; padding: 4px 11px; cursor: pointer;
+}
+.ix-gap-done:hover { border-color: #4fbf86; color: #4fbf86; }
