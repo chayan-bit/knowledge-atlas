@@ -37,16 +37,67 @@
   const esc = (s) => String(s == null ? "" : s)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-  // light inline markdown: **bold**, `code`, _em_  (used in bodies)
-  function inline(s) {
+  // ---- Markdown -----------------------------------------------
+  // Full markdown via vendored marked.js (offline). Bodies are authored as
+  // arrays of paragraphs; joined with blank lines they form one markdown doc,
+  // so headings, lists, links, blockquotes, tables and code fences all render.
+  // Falls back to a tiny inline parser if marked failed to load.
+  const MD = typeof window.marked !== "undefined" ? window.marked : null;
+  const KX = typeof window.katex !== "undefined" ? window.katex : null;
+
+  // Render a TeX span via KaTeX; on any failure fall back to the literal source
+  // so a stray "$" never blows up a page.
+  function renderTeX(tex, display) {
+    const lit = (display ? "$$" : "$") + tex + (display ? "$$" : "$");
+    if (!KX) return esc(lit);
+    try { return KX.renderToString(tex, { displayMode: display, throwOnError: true, output: "html" }); }
+    catch { return esc(lit); }
+  }
+
+  if (MD) {
+    MD.setOptions({ gfm: true, breaks: false });
+    // Math is tokenized BEFORE markdown so the inner TeX (underscores,
+    // backslashes, asterisks) is never mangled by emphasis/code parsing.
+    // Inline uses single $...$ (the convention in the data); $$...$$ is display.
+    if (KX) {
+      MD.use({ extensions: [
+        { name: "mathBlock", level: "block",
+          start(s) { const i = s.indexOf("$$"); return i < 0 ? undefined : i; },
+          tokenizer(src) { const m = /^\$\$([\s\S]+?)\$\$/.exec(src);
+            if (m) return { type: "mathBlock", raw: m[0], text: m[1].trim() }; },
+          renderer(t) { return renderTeX(t.text, true); } },
+        { name: "mathInline", level: "inline",
+          start(s) { const i = s.indexOf("$"); return i < 0 ? undefined : i; },
+          // `\\.` consumes a TeX escape (e.g. `\$` literal dollar) as a unit so
+          // an inner escaped `$` does not prematurely close the span.
+          tokenizer(src) { const m = /^\$(?!\s)((?:\\.|[^\n$])+?)(?<!\s)\$/.exec(src);
+            if (m) return { type: "mathInline", raw: m[0], text: m[1] }; },
+          renderer(t) { return renderTeX(t.text, false); } },
+      ] });
+    }
+  }
+
+  // body markdown links should open in a new tab
+  const newTabLinks = (html) => html.replace(/<a /g, '<a target="_blank" rel="noopener" ');
+
+  function fallbackInline(s) {
     return esc(s)
       .replace(/`([^`]+)`/g, "<code>$1</code>")
       .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-      .replace(/(^|[\s(])_([^_]+)_/g, "$1<em>$2</em>");
+      .replace(/(^|[\s(])[*_]([^*_]+)[*_]/g, "$1<em>$2</em>");
   }
+
+  // inline markdown (used for titles): no wrapping <p>
+  function inline(s) {
+    if (MD) return MD.parseInline(String(s == null ? "" : s));
+    return fallbackInline(s);
+  }
+
+  // block markdown (used for bodies / overviews)
   function bodyHTML(body) {
-    const paras = Array.isArray(body) ? body : String(body || "").split(/\n\n+/);
-    return paras.map((p) => `<p>${inline(p.trim())}</p>`).join("");
+    const src = Array.isArray(body) ? body.join("\n\n") : String(body || "");
+    if (MD) return newTabLinks(MD.parse(src));
+    return src.split(/\n\n+/).map((p) => `<p>${fallbackInline(p.trim())}</p>`).join("");
   }
   const hostOf = (url) => { try { return new URL(url).host.replace(/^www\./, ""); } catch { return ""; } };
 
@@ -116,6 +167,10 @@
     return edges;
   }
 
+  // light-theme palette for the SVG graph (kept in sync with styles.css vars)
+  const G = { edge: "#d8d2c4", ring: "#faf8f4", label: "#6b6660",
+              labelOn: "#232026", labelOff: "#c0b9ac" };
+
   function drawGraph(mount) {
     const W = 1100, H = 620, cx = W / 2, cy = H / 2;
     const R = Math.min(W, H) * 0.38;
@@ -142,7 +197,7 @@
       const line = document.createElementNS(svgNS, "line");
       line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
       line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
-      line.setAttribute("stroke", "#2c4055");
+      line.setAttribute("stroke", G.edge);
       line.setAttribute("stroke-width", 0.6 + (w / maxW) * 3);
       line.setAttribute("stroke-opacity", 0.35);
       line.dataset.a = a; line.dataset.b = b;
@@ -166,7 +221,7 @@
       const c = document.createElementNS(svgNS, "circle");
       c.setAttribute("cx", p.x); c.setAttribute("cy", p.y);
       c.setAttribute("r", 15); c.setAttribute("fill", d.color);
-      c.setAttribute("stroke", "#080b11"); c.setAttribute("stroke-width", 3);
+      c.setAttribute("stroke", G.ring); c.setAttribute("stroke-width", 3);
 
       const ic = document.createElementNS(svgNS, "text");
       ic.setAttribute("x", p.x); ic.setAttribute("y", p.y + 5);
@@ -180,7 +235,7 @@
       label.setAttribute("x", lx); label.setAttribute("y", ly + 4);
       label.setAttribute("text-anchor", onRight ? "start" : "end");
       label.setAttribute("font-size", "13"); label.setAttribute("font-weight", "600");
-      label.setAttribute("fill", "#aab8c8");
+      label.setAttribute("fill", G.label);
       label.textContent = d.title;
 
       g.append(halo, c, ic, label);
@@ -195,34 +250,86 @@
       const near = new Set([id]);
       edgeEls.forEach((e) => {
         const on = e.dataset.a === id || e.dataset.b === id;
-        e.setAttribute("stroke-opacity", on ? 0.9 : 0.06);
-        e.setAttribute("stroke", on ? domainById.get(id).color : "#2c4055");
+        e.setAttribute("stroke-opacity", on ? 0.9 : 0.08);
+        e.setAttribute("stroke", on ? domainById.get(id).color : G.edge);
         if (on) { near.add(e.dataset.a); near.add(e.dataset.b); }
       });
       nodeEls.forEach((nn) => {
         const on = near.has(nn.id);
-        nn.g.setAttribute("opacity", on ? 1 : 0.25);
+        nn.g.setAttribute("opacity", on ? 1 : 0.3);
         nn.halo.setAttribute("opacity", nn.id === id ? 0.3 : on ? 0.16 : 0.05);
-        nn.label.setAttribute("fill", on ? "#e6edf3" : "#5d6b7d");
+        nn.label.setAttribute("fill", on ? G.labelOn : G.labelOff);
       });
     }
     function clearHighlight() {
       edgeEls.forEach((e) => {
-        e.setAttribute("stroke-opacity", 0.35); e.setAttribute("stroke", "#2c4055");
+        e.setAttribute("stroke-opacity", 0.45); e.setAttribute("stroke", G.edge);
       });
       nodeEls.forEach((nn) => {
         nn.g.setAttribute("opacity", 1);
-        nn.halo.setAttribute("opacity", 0.12);
-        nn.label.setAttribute("fill", "#aab8c8");
+        nn.halo.setAttribute("opacity", 0.14);
+        nn.label.setAttribute("fill", G.label);
       });
     }
     mount.appendChild(svg);
   }
 
+  // ---- Content helpers ----------------------------------------
+  function resourceList(list, extraClass) {
+    const items = (list || []).map((r) => `
+      <li><a href="${esc(r.url)}" target="_blank" rel="noopener">
+        <span class="res-type ${r.type || "docs"}">${esc(r.type || "docs")}</span>
+        <span class="res-label">${esc(r.label)}${r.note ? ` <span class="res-note">- ${esc(r.note)}</span>` : ""}</span>
+        <span class="res-host">${esc(hostOf(r.url))}</span>
+      </a></li>`).join("");
+    return items ? `<ul class="resources${extraClass ? " " + extraClass : ""}">${items}</ul>` : "";
+  }
+
+  function connChips(t) {
+    return (t.connections || []).map((c) => {
+      const tgt = resolveTarget(c.to);
+      if (!tgt) return "";
+      return `<a class="conn" href="${tgt.href}">
+        <span class="conn-to"><span class="dot" style="background:${tgt.color}"></span>
+          ${esc(tgt.domain.title)} <span class="arrow">→</span> ${esc(tgt.label)}</span>
+        <span class="conn-note">${esc(c.note)}</span>
+      </a>`;
+    }).join("");
+  }
+
+  // strip markdown / TeX to plain text for excerpts
+  function plainText(body) {
+    let s = Array.isArray(body) ? (body[0] || "") : String(body || "");
+    return s
+      .replace(/\$[^$]*\$/g, " ")          // math
+      .replace(/`([^`]+)`/g, "$1")          // code
+      .replace(/\*\*([^*]+)\*\*/g, "$1")    // bold
+      .replace(/[*_]/g, "")                  // stray emphasis
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // links
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  function excerpt(body, n = 165) {
+    const s = plainText(body);
+    return s.length > n ? esc(s.slice(0, n).replace(/\s+\S*$/, "")) + "…" : esc(s);
+  }
+
+  // prev / next pager. each side is {href,label,dir} or null
+  function pager(prev, next) {
+    const side = (o, dir, word) => o
+      ? `<a class="pg pg-${dir}" href="${o.href}"><span class="pg-dir">${word}</span><span class="pg-label">${esc(o.label)}</span></a>`
+      : `<span class="pg pg-empty"></span>`;
+    return `<nav class="pager">${side(prev, "prev", "← Previous")}${side(next, "next", "Next →")}</nav>`;
+  }
+
+  const crumb = (parts) => `<div class="crumbs">${parts.map((p, i) =>
+    (i ? ' <span class="sep">›</span> ' : "") + (p.href ? `<a href="${p.href}">${esc(p.label)}</a>` : `<span>${esc(p.label)}</span>`)
+  ).join("")}</div>`;
+
   // ============================================================
-  //  DOMAIN PAGE
+  //  DOMAIN PAGE  (clickable index of topics)
   // ============================================================
-  function renderDomain(domainId, topicId) {
+  function renderDomain(domainId) {
     const d = domainById.get(domainId);
     if (!d) return renderNotFound();
 
@@ -235,111 +342,114 @@
       else groups.push({ level: lvl, topics: [t] });
     }
 
-    const toc = groups.map((g) => {
-      const items = g.topics.map((t) =>
-        `<li><a href="#/d/${d.id}/${t.id}" data-tid="${t.id}">${esc(t.title)}</a></li>`).join("");
-      return g.level
-        ? `<li class="toc-group"><span class="toc-lvl">${esc(g.level)}</span><ul>${items}</ul></li>`
-        : items;
-    }).join("");
+    const card = (t) => {
+      const nSub = (t.subtopics || []).length;
+      const nRes = (t.resources || []).length;
+      const meta = [
+        nSub ? `<b>${nSub}</b> deep dives` : "",
+        nRes ? `<b>${nRes}</b> links` : "",
+      ].filter(Boolean).join('<span class="tc-dot">·</span>');
+      return `
+        <a class="topic-card" href="#/d/${d.id}/${t.id}">
+          <div class="tc-main">
+            <h3>${esc(t.title)}</h3>
+            <p>${excerpt(t.body)}</p>
+            ${meta ? `<div class="tc-meta">${meta}</div>` : ""}
+          </div>
+          <span class="tc-arrow">→</span>
+        </a>`;
+    };
 
     app.innerHTML = `
-      <div style="--d:${d.color}">
-        <div class="dpage-head">
-          <div class="crumbs"><a href="#/">Map</a> &nbsp;›&nbsp; <a href="#/domains">Domains</a>
-            &nbsp;›&nbsp; <span>${esc(d.title)}</span></div>
+      <article style="--d:${d.color}">
+        <header class="dpage-head">
+          ${crumb([{ label: "Map", href: "#/" }, { label: "Domains", href: "#/domains" }, { label: d.title }])}
           <h1><span class="ic">${d.icon || "◆"}</span>${esc(d.title)}
-            <span style="font-family:var(--mono);font-size:.5em;color:var(--faint)">
-            ${String(d.num).padStart(2,"0")}</span></h1>
+            <span class="dpage-num">${String(d.num).padStart(2, "0")}</span></h1>
           <p class="tagline">${esc(d.tagline)}</p>
           <div class="overview">${bodyHTML(d.overview)}</div>
+        </header>
+        <div class="topic-index">
+          ${groups.map((g) =>
+            (g.level ? `<div class="level-head"><span class="level-rule"></span><span class="level-name">${esc(g.level)}</span><span class="level-rule"></span></div>` : "")
+            + `<div class="topic-cards">${g.topics.map(card).join("")}</div>`
+          ).join("")}
         </div>
-
-        <div class="dlayout">
-          <aside class="toc">
-            <p class="section-label">On this page</p>
-            <ul>${toc}</ul>
-          </aside>
-          <div class="dcontent">
-            ${groups.map((g) =>
-              (g.level ? `<div class="level-head"><span class="level-rule"></span><span class="level-name">${esc(g.level)}</span><span class="level-rule"></span></div>` : "")
-              + g.topics.map((t) => topicCard(t, d)).join("")
-            ).join("")}
-          </div>
-        </div>
-      </div>
-    `;
-
-    setupScrollSpy();
-    if (topicId) {
-      const el = document.getElementById(topicId);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-        el.classList.add("flash");
-        setTimeout(() => el.classList.remove("flash"), 1600);
-      }
-    } else {
-      window.scrollTo(0, 0);
-    }
+      </article>`;
+    window.scrollTo(0, 0);
   }
 
-  function resourceList(list, extraClass) {
-    const items = (list || []).map((r) => `
-      <li><a href="${esc(r.url)}" target="_blank" rel="noopener">
-        <span class="res-type ${r.type || "docs"}">${esc(r.type || "docs")}</span>
-        <span class="res-label">${esc(r.label)}${r.note ? ` <span class="res-note">— ${esc(r.note)}</span>` : ""}</span>
-        <span class="res-host">${esc(hostOf(r.url))}</span>
-      </a></li>`).join("");
-    return items ? `<ul class="resources${extraClass ? " " + extraClass : ""}">${items}</ul>` : "";
+  // ============================================================
+  //  TOPIC PAGE  (blog article + deep-dive index)
+  // ============================================================
+  function renderTopic(domainId, topicId) {
+    const d = domainById.get(domainId);
+    if (!d) return renderNotFound();
+    const topics = d.topics || [];
+    const idx = topics.findIndex((x) => x.id === topicId);
+    const t = topics[idx];
+    if (!t) return renderNotFound();
+
+    const subs = (t.subtopics || []).map((s, i) => `
+      <a class="sub-card" href="#/d/${d.id}/${t.id}/${i}">
+        <span class="sub-card-n">${String(i + 1).padStart(2, "0")}</span>
+        <span class="sub-card-main">
+          <span class="sub-card-title">${inline(s.title)}</span>
+          <span class="sub-card-ex">${excerpt(s.body, 130)}</span>
+        </span>
+        <span class="sub-card-arrow">→</span>
+      </a>`).join("");
+
+    const conns = connChips(t);
+    const prev = topics[idx - 1] && { href: `#/d/${d.id}/${topics[idx - 1].id}`, label: topics[idx - 1].title };
+    const next = topics[idx + 1] && { href: `#/d/${d.id}/${topics[idx + 1].id}`, label: topics[idx + 1].title };
+
+    app.innerHTML = `
+      <article style="--d:${d.color}">
+        ${crumb([{ label: "Map", href: "#/" }, { label: d.title, href: `#/d/${d.id}` }, { label: t.title }])}
+        <section class="topic post" id="${t.id}">
+          ${t.level ? `<div class="post-lvl">${esc(t.level)}</div>` : ""}
+          <h2>${esc(t.title)}</h2>
+          <div class="body">${bodyHTML(t.body)}</div>
+          ${subs ? `<div class="block-label">Deep dive - textbook subtopics</div><div class="sub-cards">${subs}</div>` : ""}
+          ${resourceList(t.resources) ? `<div class="block-label">Read / practice</div>${resourceList(t.resources)}` : ""}
+          ${conns ? `<div class="block-label">Connects to</div><div class="connections">${conns}</div>` : ""}
+        </section>
+        ${pager(prev, next)}
+      </article>`;
+    window.scrollTo(0, 0);
   }
 
-  function topicCard(t, d) {
-    const resources = (t.resources || []).map((r) => `
-      <li><a href="${esc(r.url)}" target="_blank" rel="noopener">
-        <span class="res-type ${r.type || "docs"}">${esc(r.type || "docs")}</span>
-        <span class="res-label">${esc(r.label)}${r.note ? ` <span class="res-note">— ${esc(r.note)}</span>` : ""}</span>
-        <span class="res-host">${esc(hostOf(r.url))}</span>
-      </a></li>`).join("");
+  // ============================================================
+  //  SUBTOPIC PAGE  (full blog article for one deep dive)
+  // ============================================================
+  function renderSubtopic(domainId, topicId, subIdx) {
+    const d = domainById.get(domainId);
+    if (!d) return renderNotFound();
+    const t = (d.topics || []).find((x) => x.id === topicId);
+    if (!t) return renderNotFound();
+    const subs = t.subtopics || [];
+    const i = Number.parseInt(subIdx, 10);
+    const s = subs[i];
+    if (!s) return renderNotFound();
 
-    const subs = (t.subtopics || []).map((s) => `
-      <details class="subtopic">
-        <summary><span class="sub-title">${inline(s.title)}</span><span class="sub-chev">▸</span></summary>
-        <div class="sub-body">${bodyHTML(s.body)}${resourceList(s.resources, "sub-res")}</div>
-      </details>`).join("");
+    const topicHref = `#/d/${d.id}/${t.id}`;
+    const prev = subs[i - 1] ? { href: `#/d/${d.id}/${t.id}/${i - 1}`, label: subs[i - 1].title } : { href: topicHref, label: t.title };
+    const next = subs[i + 1] && { href: `#/d/${d.id}/${t.id}/${i + 1}`, label: subs[i + 1].title };
 
-    const conns = (t.connections || []).map((c) => {
-      const tgt = resolveTarget(c.to);
-      if (!tgt) return "";
-      return `<a class="conn" href="${tgt.href}">
-        <span class="conn-to"><span class="dot" style="background:${tgt.color}"></span>
-          ${esc(tgt.domain.title)} <span class="arrow">→</span> ${esc(tgt.label)}</span>
-        <span class="conn-note">${esc(c.note)}</span>
-      </a>`;
-    }).join("");
-
-    return `
-      <section class="topic" id="${t.id}">
-        <h2>${esc(t.title)}</h2>
-        <div class="body">${bodyHTML(t.body)}</div>
-        ${subs ? `<div class="block-label">Deep dive — textbook subtopics</div><div class="subtopics">${subs}</div>` : ""}
-        ${resources ? `<div class="block-label">Read / practice</div><ul class="resources">${resources}</ul>` : ""}
-        ${conns ? `<div class="block-label">Connects to</div><div class="connections">${conns}</div>` : ""}
-      </section>`;
-  }
-
-  function setupScrollSpy() {
-    const links = [...document.querySelectorAll(".toc a")];
-    const map = new Map(links.map((a) => [a.dataset.tid, a]));
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (e.isIntersecting) {
-          links.forEach((a) => a.classList.remove("active"));
-          const a = map.get(e.target.id);
-          if (a) a.classList.add("active");
-        }
-      });
-    }, { rootMargin: "-30% 0px -60% 0px" });
-    document.querySelectorAll(".topic").forEach((s) => obs.observe(s));
+    // wrap as the parent topic (id = topicId) so notes anchor to the topic
+    app.innerHTML = `
+      <article style="--d:${d.color}">
+        ${crumb([{ label: "Map", href: "#/" }, { label: d.title, href: `#/d/${d.id}` }, { label: t.title, href: topicHref }, { label: s.title }])}
+        <section class="topic post" id="${t.id}">
+          <div class="post-lvl">Deep dive <span class="sep">·</span> ${esc(t.title)} <span class="sep">·</span> ${i + 1} / ${subs.length}</div>
+          <h2>${inline(s.title)}</h2>
+          <div class="body">${bodyHTML(s.body)}</div>
+          ${resourceList(s.resources) ? `<div class="block-label">Read / practice</div>${resourceList(s.resources)}` : ""}
+        </section>
+        ${pager(prev, next)}
+      </article>`;
+    window.scrollTo(0, 0);
   }
 
   // ============================================================
@@ -435,15 +545,26 @@
   // ============================================================
   //  ROUTER
   // ============================================================
-  function route() {
+  function dispatch() {
     const hash = location.hash || "#/";
     const parts = hash.replace(/^#\/?/, "").split("/").filter(Boolean);
     if (resultsEl) resultsEl.hidden = true;
     if (parts.length === 0) return renderHome();
     if (parts[0] === "domains") return renderDomainsIndex();
     if (parts[0] === "connections") return renderConnections();
-    if (parts[0] === "d") return renderDomain(parts[1], parts[2]);
+    if (parts[0] === "d") {
+      if (parts.length >= 4) return renderSubtopic(parts[1], parts[2], parts[3]);
+      if (parts.length === 3) return renderTopic(parts[1], parts[2]);
+      return renderDomain(parts[1]);
+    }
     renderNotFound();
+  }
+
+  // Smooth crossfade between views via the View Transitions API; the engine
+  // degrades to an instant swap where it is unsupported.
+  function route() {
+    if (document.startViewTransition) document.startViewTransition(dispatch);
+    else dispatch();
   }
 
   window.addEventListener("hashchange", route);

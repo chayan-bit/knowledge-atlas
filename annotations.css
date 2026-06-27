@@ -1,6 +1,6 @@
 /* ============================================================
-   Knowledge Atlas — annotation layer styles
-   Loaded after styles.css. Reuses the dark theme variables.
+   Knowledge Atlas - annotation layer styles
+   Loaded after styles.css. Inherits the light-theme variables.
    ============================================================ */
 
 /* the [hidden] attribute must win over the display rules below */
@@ -16,23 +16,23 @@
   display: flex;
   gap: 2px;
   padding: 4px;
-  background: #0d1320;
-  border: 1px solid #2c4055;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(40, 36, 30, 0.18);
 }
 .ka-selbar button,
 .ka-pencil {
   font: inherit;
   font-size: 0.8rem;
-  color: #e6edf3;
+  color: var(--text);
   background: transparent;
   border: 0;
   padding: 5px 9px;
   border-radius: 7px;
   cursor: pointer;
 }
-.ka-selbar button:hover { background: #1b2740; }
+.ka-selbar button:hover { background: var(--panel-2); }
 
 .ka-pencil {
   position: absolute;
@@ -42,12 +42,12 @@
   padding: 0;
   line-height: 20px;
   text-align: center;
-  background: #0d1320;
-  border: 1px solid #2c4055;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(40, 36, 30, 0.14);
 }
-.ka-pencil:hover { border-color: #4d6485; }
+.ka-pencil:hover { border-color: var(--accent); }
 
 /* per-topic badge appended to topic <h2> */
 .ka-badge {
@@ -56,9 +56,9 @@
   vertical-align: middle;
   margin-left: 0.6rem;
   padding: 2px 7px;
-  color: var(--d, #6ea8ff);
-  background: color-mix(in srgb, var(--d, #6ea8ff) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--d, #6ea8ff) 40%, transparent);
+  color: var(--d, #2f6fed);
+  background: color-mix(in srgb, var(--d, #2f6fed) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--d, #2f6fed) 40%, transparent);
   border-radius: 999px;
   cursor: pointer;
 }
@@ -70,17 +70,17 @@
   z-index: 1300;
   display: grid;
   place-items: center;
-  background: rgba(3, 6, 12, 0.66);
+  background: rgba(40, 36, 30, 0.4);
   backdrop-filter: blur(2px);
 }
 .ka-modal-card {
   width: min(560px, 92vw);
   max-height: 88vh;
   overflow: auto;
-  background: #0b111d;
-  border: 1px solid #243349;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
   border-radius: 16px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 24px 64px rgba(40, 36, 30, 0.22);
 }
 .ka-modal-card header,
 .ka-modal-card footer {
@@ -89,56 +89,58 @@
   justify-content: space-between;
   padding: 14px 18px;
 }
-.ka-modal-card header { border-bottom: 1px solid #18222f; }
-.ka-modal-card footer { border-top: 1px solid #18222f; gap: 10px; justify-content: flex-end; }
+.ka-modal-card header { border-bottom: 1px solid var(--border); }
+.ka-modal-card footer { border-top: 1px solid var(--border); gap: 10px; justify-content: flex-end; }
 .ka-x {
-  background: transparent; border: 0; color: #8aa0b6; font-size: 1rem; cursor: pointer;
+  background: transparent; border: 0; color: var(--muted); font-size: 1rem; cursor: pointer;
 }
-.ka-ctx { padding: 12px 18px 0; font-size: 0.82rem; color: #8aa0b6; }
-.ka-ctx-on { color: #aab8c8; }
+.ka-ctx { padding: 12px 18px 0; font-size: 0.82rem; color: var(--muted); }
+.ka-ctx-on { color: var(--text); }
 .ka-ctx blockquote,
 .ka-item blockquote {
   margin: 8px 0 0;
   padding: 8px 12px;
-  border-left: 3px solid #2c4055;
-  background: #0e1626;
+  border-left: 3px solid var(--border-2);
+  background: var(--surface-2);
   border-radius: 0 8px 8px 0;
-  color: #c4d0dd;
+  color: var(--muted);
   font-size: 0.82rem;
 }
 .ka-tabs { display: flex; gap: 6px; padding: 14px 18px 0; }
 .ka-tabs button {
-  font: inherit; font-size: 0.82rem; color: #8aa0b6;
-  background: #0e1626; border: 1px solid #1d2a3b;
+  font: inherit; font-size: 0.82rem; color: var(--muted);
+  background: var(--surface-2); border: 1px solid var(--border);
   padding: 6px 12px; border-radius: 8px; cursor: pointer;
 }
-.ka-tabs button.on { color: #e6edf3; border-color: #3a5170; background: #142036; }
+.ka-tabs button.on { color: var(--text); border-color: var(--accent); background: var(--panel-2); }
 .ka-body { padding: 14px 18px; display: grid; gap: 12px; }
-.ka-body label { display: grid; gap: 5px; font-size: 0.78rem; color: #8aa0b6; }
+.ka-body label { display: grid; gap: 5px; font-size: 0.78rem; color: var(--muted); }
 .ka-body input,
 .ka-body textarea {
-  font: inherit; color: #e6edf3; background: #0e1626;
-  border: 1px solid #233347; border-radius: 9px; padding: 9px 11px; resize: vertical;
+  font: inherit; color: var(--text); background: var(--field-bg);
+  border: 1px solid var(--border-2); border-radius: 9px; padding: 9px 11px; resize: vertical;
 }
 .ka-body input:focus,
-.ka-body textarea:focus { outline: none; border-color: #3f5878; }
+.ka-body textarea:focus { outline: none; border-color: var(--accent); }
 .ka-save {
-  font: inherit; color: #08111f; background: #6ea8ff; font-weight: 600;
+  font: inherit; color: #fff; background: var(--accent); font-weight: 600;
   border: 0; padding: 8px 16px; border-radius: 9px; cursor: pointer;
 }
 .ka-cancel {
-  font: inherit; color: #aab8c8; background: transparent;
-  border: 1px solid #243349; padding: 8px 14px; border-radius: 9px; cursor: pointer;
+  font: inherit; color: var(--muted); background: transparent;
+  border: 1px solid var(--border-2); padding: 8px 14px; border-radius: 9px; cursor: pointer;
 }
 
 /* shared answer / pending blocks */
 .ka-ans {
-  background: #0c1a14; border: 1px solid #1d3b2c; border-radius: 9px; padding: 10px 12px;
+  background: color-mix(in srgb, var(--ok) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--ok) 35%, var(--border));
+  border-radius: 9px; padding: 10px 12px;
 }
-.ka-ans span { font-size: 0.66rem; letter-spacing: 0.04em; text-transform: uppercase; color: #4fbf86; }
-.ka-ans p { margin: 4px 0 0; color: #d3e2da; font-size: 0.85rem; white-space: pre-wrap; }
-.ka-pending { font-size: 0.76rem; color: #c79a55; }
-.ka-pending code { background: #1a1408; padding: 1px 5px; border-radius: 5px; }
+.ka-ans span { font-size: 0.66rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ok); }
+.ka-ans p { margin: 4px 0 0; color: var(--text); font-size: 0.85rem; white-space: pre-wrap; }
+.ka-pending { font-size: 0.76rem; color: var(--warn); }
+.ka-pending code { background: var(--bg-2); padding: 1px 5px; border-radius: 5px; }
 
 /* ---- notes nav link + slide-over panel --------------------- */
 .ka-nav { cursor: pointer; }
@@ -150,38 +152,48 @@
   z-index: 1250;
   display: flex;
   flex-direction: column;
-  background: #0a0f1a;
-  border-left: 1px solid #1c2940;
-  box-shadow: -16px 0 48px rgba(0, 0, 0, 0.5);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -16px 0 48px rgba(40, 36, 30, 0.16);
 }
 .ka-panel-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 18px; border-bottom: 1px solid #18222f;
+  padding: 16px 18px; border-bottom: 1px solid var(--border);
 }
-.ka-close { background: transparent; border: 0; color: #8aa0b6; font-size: 1rem; cursor: pointer; }
+.ka-close { background: transparent; border: 0; color: var(--muted); font-size: 1rem; cursor: pointer; }
 .ka-panel-tools {
-  display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px; border-bottom: 1px solid #131c28;
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px; border-bottom: 1px solid var(--border);
 }
 .ka-panel-tools button {
-  font: inherit; font-size: 0.72rem; color: #aab8c8;
-  background: #0e1626; border: 1px solid #1d2a3b; padding: 5px 9px;
+  font: inherit; font-size: 0.72rem; color: var(--muted);
+  background: var(--surface-2); border: 1px solid var(--border); padding: 5px 9px;
   border-radius: 8px; cursor: pointer;
 }
-.ka-panel-tools button:hover { border-color: #34496a; }
-.ka-panel-tools .ka-danger { color: #e08a8a; border-color: #3a2230; }
+.ka-panel-tools button:hover { border-color: var(--accent); }
+.ka-panel-tools .ka-danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
 
 .ka-list { list-style: none; margin: 0; padding: 10px 14px; overflow: auto; display: grid; gap: 10px; }
-.ka-empty { padding: 28px 18px; color: #6d7c8e; font-size: 0.85rem; line-height: 1.5; }
+.ka-empty { padding: 28px 18px; color: var(--faint); font-size: 0.85rem; line-height: 1.5; }
 .ka-item {
-  background: #0c121f; border: 1px solid #18222f; border-radius: 12px; padding: 11px 13px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 11px 13px;
 }
 .ka-item-head { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; }
 .ka-kind { font-size: 0.95rem; }
-.ka-where { color: #6ea8ff; text-decoration: none; flex: 1; }
+.ka-where { color: var(--accent); text-decoration: none; flex: 1; }
 .ka-edit, .ka-del {
-  background: transparent; border: 0; cursor: pointer; color: #6d7c8e; font-size: 0.85rem;
+  background: transparent; border: 0; cursor: pointer; color: var(--faint); font-size: 0.85rem;
 }
-.ka-edit:hover, .ka-del:hover { color: #e6edf3; }
-.ka-item p { margin: 8px 0 0; color: #d6e0ea; font-size: 0.86rem; white-space: pre-wrap; }
-.ka-link a { color: #7fd0a6; text-decoration: none; font-size: 0.84rem; }
-.ka-dangling { color: #c79a55; font-size: 0.82rem; }
+.ka-edit:hover, .ka-del:hover { color: var(--text); }
+.ka-item p { margin: 8px 0 0; color: var(--text); font-size: 0.86rem; white-space: pre-wrap; }
+.ka-link a { color: var(--ok); text-decoration: none; font-size: 0.84rem; }
+.ka-dangling { color: var(--warn); font-size: 0.82rem; }
+
+/* toast: brief confirmation when a comment becomes a Gaps-inbox entry */
+.ka-toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 12px);
+  background: var(--panel); border: 1px solid var(--accent); color: var(--text);
+  font-size: 0.82rem; padding: 10px 16px; border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  opacity: 0; pointer-events: none; transition: opacity 0.28s ease, transform 0.28s ease; z-index: 9999;
+}
+.ka-toast.on { opacity: 1; transform: translate(-50%, 0); }

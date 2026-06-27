@@ -50,6 +50,77 @@
   const newId = () =>
     "a_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const nowISO = () => new Date().toISOString();
+
+  // ---- companion server: live answering + note→gap -------------
+  // The atlas stays fully offline; when tools/server.js is running, a question
+  // asked here is answered in-site (no Export → answer.js → Import round-trip),
+  // and a comment is triaged into the AI Gaps inbox if it hides a knowledge gap.
+  let serverOn = false;
+  fetch("/api/ping")
+    .then((r) => (serverOn = r.ok))
+    .catch(() => (serverOn = false));
+
+  const answering = new Set(); // annotation ids whose answer is in flight
+
+  function toast(msg) {
+    const el = document.createElement("div");
+    el.className = "ka-toast";
+    el.textContent = msg;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("on"));
+    setTimeout(() => {
+      el.classList.remove("on");
+      setTimeout(() => el.remove(), 300);
+    }, 3200);
+  }
+
+  function contextOf(a) {
+    return {
+      topic: a.topicId ? titleById.get(a.topicId) || a.topicId : "",
+      topicId: a.topicId || "",
+      domain: domainOf(a.topicId),
+      quote: a.quote || "",
+      hash: a.hash,
+    };
+  }
+
+  // Live-answer a question annotation, filling its answer in place.
+  async function requestAnswer(a) {
+    if (!serverOn) return;
+    answering.add(a.id);
+    if (panelOpen) renderPanel();
+    redecorate();
+    try {
+      const r = await fetch("/api/answer-question", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: a.id, question: a.text, context: contextOf(a) }),
+      });
+      const j = await r.json();
+      answering.delete(a.id);
+      if (r.ok && j.answer) update(a.id, { answer: j.answer, answeredAt: nowISO() });
+      else if (panelOpen) renderPanel();
+    } catch {
+      answering.delete(a.id);
+      if (panelOpen) renderPanel();
+    }
+  }
+
+  // Fire-and-forget: triage a comment into a durable gap if it hides one.
+  async function requestNoteGap(a) {
+    if (!serverOn) return;
+    try {
+      const r = await fetch("/api/note-gap", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ note: a.text, context: contextOf(a) }),
+      });
+      const j = await r.json();
+      if (r.ok && j.added) toast("📥 Added to your Gaps inbox (AI)");
+    } catch {
+      /* best-effort */
+    }
+  }
   const esc = (s) =>
     String(s == null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -57,10 +128,15 @@
 
   // Lookup of every annotatable target id -> human title (topics + domains)
   const titleById = new Map();
+  const domainByTopic = new Map(); // topic id -> owning domain id
   for (const d of window.ATLAS || []) {
     titleById.set(d.id, d.title);
-    for (const t of d.topics || []) titleById.set(t.id, t.title);
+    for (const t of d.topics || []) {
+      titleById.set(t.id, t.title);
+      domainByTopic.set(t.id, d.id);
+    }
   }
+  const domainOf = (id) => (id ? domainByTopic.get(id) || "" : "");
   const topicIdOf = (el) => el?.closest?.(".topic")?.id || null;
   const clip = (s) => {
     s = String(s || "").replace(/\s+/g, " ").trim();
@@ -273,6 +349,9 @@
       if (isEdit) update(a.id, a);
       else add(a);
       close();
+      // Live server actions (no-ops when the companion server is off).
+      if (a.kind === "question" && !a.answer) requestAnswer(a);
+      else if (a.kind === "comment" && !isEdit) requestNoteGap(a);
     };
   }
 
@@ -352,7 +431,9 @@
       if (a.kind === "question")
         main += a.answer
           ? `<div class="ka-ans"><span>Sonnet</span><p>${esc(a.answer)}</p></div>`
-          : `<div class="ka-pending">⏳ pending — Export questions → run <code>tools/answer.js</code> → Import answers</div>`;
+          : answering.has(a.id)
+          ? `<div class="ka-pending">⏳ answering…</div>`
+          : `<div class="ka-pending">⏳ pending — start <code>tools/server.js</code> to auto-answer, or Export questions → <code>tools/answer.js</code> → Import answers</div>`;
     }
     const where = a.topicId ? titleById.get(a.topicId) || a.topicId : "page";
     return `

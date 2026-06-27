@@ -1,0 +1,51 @@
+﻿Interpretability & XAI
+The field splits into two subfields. There's traditional XAI, which focuses on explaining model outputs, mostly for deployment and auditing. And then there is Mechanistic Interpretability, which tries to reverse-engineer what's actually happening inside the model. Finish section 1 and then decide which one of these you want to commit your summers to. You can do both if you really want to though.
+________________
+
+
+1. For Starters, we have:
+Neel Nanda’s 3 minute video https://www.youtube.com/watch?v=sISodZSxNvc 
+Jay Alammar's Blog https://jalammar.github.io/illustrated-transformer/
+Do the Illustrated Transformer post first, then browse in his blogpost.
+Distill.pub https://distill.pub/2020/circuits/ 
+Start with "Zoom In: An Introduction to Circuits" (Olah et al., 2020) https://distill.pub/2020/circuits/zoom-in/ and "Feature Visualization" https://distill.pub/2017/feature-visualization/
+Christoph Molnar: Interpretable Machine Learning, Chapter 1 https://christophm.github.io/interpretable-ml-book/intro.html Just the intro for now. Sets up the classical XAI framing and the question of what a good explanation is. 
+________________
+
+
+
+
+
+
+2. Classical XAI
+Christoph Molnar: Interpretable Machine Learning https://christophm.github.io/interpretable-ml-book/
+Your reference text for classical XAI. Covers LIME, SHAP, PDPs, counterfactuals blah blah.
+The point is, read a chapter here, then go on to read the foundational paper of that concept. 
+
+Here’s a rough list of Foundational papers to read alongside it:
+LIME: Ribeiro et al., "Why Should I Trust You?" (2016) https://arxiv.org/abs/1602.04938 -- 
+SHAP: Lundberg & Lee (2017) https://arxiv.org/abs/1705.07874
+Shap is a bit hard to get at once, these https://shap.readthedocs.io/ have a lot of visual explanations that might help. 
+TCAV: Kim et al. (2018) https://arxiv.org/abs/1711.11279 
+Grad-CAM: Selvaraju et al. (2017) https://arxiv.org/abs/1610.02391 
+Lipton, "The Mythos of Model Interpretability" (2018) https://arxiv.org/abs/1606.03490 
+read this after the above four
+Doshi-Velez & Kim, "Towards a Rigorous Science of Interpretable Machine Learning" (2017) https://arxiv.org/abs/1702.08608 
+You would anyways realize this early on that not all explanations are equal, read through the main body of this paper as well.
+    
+3. Mechanistic Interpretability
+Neel Nanda: A Comprehensive Mechanistic Interpretability Explainer
+The below given doc is gonna be the centerpiece here. Essentially a map of the field, when you encounter a new term, for instance “sparse auto-encoder’ come back to this doc and see what it is about. https://www.neelnanda.io/mechanistic-interpretability/glossary 
+
+You can start by reading the rest of the circuit thread’s blogs. 
+Foundational papers, in order:
+Elhage et al. (Anthropic), "A Mathematical Framework for Transformer Circuits" (2021) https://transformer-circuits.pub/2021/framework/index.html 
+Introduces the residual stream and induction heads.
+Wang et al., "Interpretability in the Wild: A Circuit for IOI in GPT-2" (2022) https://arxiv.org/abs/2211.00593 example of a finished circuit-finding project. 
+Elhage et al. (Anthropic), "Toy Models of Superposition" (2022) https://transformer-circuits.pub/2022/toy_model/index.html 
+Superposition introduced here. 
+Bricken et al. (Anthropic), "Towards Monosemanticity" (2023) https://transformer-circuits.pub/2023/monosemanticity/index.html 
+Sparse autoencoders as a tool to find interpretable features inside LLMs. 
+Neel Nanda's YouTube channel (for funsies)
+https://www.youtube.com/@neelnanda2469/videos 
+Tutorial walkthroughs, paper explanations, research advice, cool guy.
